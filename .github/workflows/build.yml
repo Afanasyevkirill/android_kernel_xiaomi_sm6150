@@ -69,9 +69,15 @@ jobs:
 
       - name: Build
         run: |
-          export KERNEL_DIR=kernel
-          export DEFCONFIG=sweet_defconfig
-          BUILD_CONFIG=kernel/build.config.common build/build.sh
+          cd kernel
+          export ARCH=arm64
+          export CC=clang
+          export CLANG_TRIPLE=aarch64-linux-gnu-
+          export PATH="$GITHUB_WORKSPACE/prebuilts-master/clang/host/linux-x86/clang-r383902/bin:$GITHUB_WORKSPACE/build/build-tools/path/linux-x86:$GITHUB_WORKSPACE/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:$PATH"
+
+          make O=../out ARCH=arm64 CC=clang sweet_defconfig
+          make O=../out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-androidkernel- -j$(nproc)
 
       - name: Upload artifacts
         if: always()
