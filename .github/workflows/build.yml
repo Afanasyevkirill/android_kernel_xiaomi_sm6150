@@ -34,7 +34,15 @@ jobs:
             prebuilts-master/clang/host/linux-x86/clang-r383902
             prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
           key: toolchain-r383902-gcc49-v2
-
+      - name: Fetch build-tools
+        run: |
+          mkdir -p build/build-tools/path
+          curl -L "https://android.googlesource.com/platform/prebuilts/build-tools/+archive/refs/heads/main/linux-x86.tar.gz" \
+            -o buildtools.tar.gz
+          file buildtools.tar.gz
+          tar -xzf buildtools.tar.gz -C build/build-tools/path
+          rm buildtools.tar.gz
+          ls build/build-tools/path/bin | head
       - name: Fetch Clang prebuilt (r383902) via archive
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
@@ -53,14 +61,6 @@ jobs:
           git clone --depth=1 \
             https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
             prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
-
-      - name: Fetch build-tools
-        run: |
-          rm -rf build/build-tools/path
-          mkdir -p build/build-tools
-          git clone --depth=1 \
-            https://android.googlesource.com/platform/build/build-tools \
-            build/build-tools/path
 
       - name: Install host deps
         run: |
