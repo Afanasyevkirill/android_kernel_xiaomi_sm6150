@@ -26,16 +26,28 @@ jobs:
           git checkout $(git log --oneline --before=2021-01-01 -1 --format=%H)
           cd ..
 
-      - name: Fetch Clang prebuilt (r383902)
+      - name: Cache toolchain
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            prebuilts-master/clang/host/linux-x86/clang-r383902
+            prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
+          key: toolchain-r383902-gcc49-v2
+
+      - name: Fetch Clang prebuilt (r383902) via archive
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
-          mkdir -p prebuilts-master/clang/host/linux-x86
-          git clone --depth=1 \
-            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
-            clang-tmp
-          cp -r clang-tmp/clang-r383902 prebuilts-master/clang/host/linux-x86/
-          rm -rf clang-tmp
+          mkdir -p prebuilts-master/clang/host/linux-x86/clang-r383902
+          curl -L "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/llvm-r383902b/clang-r383902.tar.gz" \
+            -o clang.tar.gz
+          file clang.tar.gz
+          tar -xzf clang.tar.gz -C prebuilts-master/clang/host/linux-x86/clang-r383902
+          rm clang.tar.gz
+          ls prebuilts-master/clang/host/linux-x86/clang-r383902/bin | head
 
       - name: Fetch GCC aarch64 prebuilt (4.9)
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
           mkdir -p prebuilts/gcc/linux-x86/aarch64
           git clone --depth=1 \
@@ -61,6 +73,7 @@ jobs:
           BUILD_CONFIG=kernel/build.config.common build/build.sh
 
       - name: Upload artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: kernel-build
@@ -69,3 +82,4 @@ jobs:
             out/android-4.14/dist/Image.gz
             out/android-4.14/dist/vmlinux
             out/android-4.14/dist/System.map
+          if-no-files-found: warn
