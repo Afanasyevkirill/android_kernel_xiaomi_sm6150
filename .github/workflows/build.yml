@@ -84,6 +84,7 @@ jobs:
           cd kernel
           export ARCH=arm64
           export PATH="$GITHUB_WORKSPACE/prebuilts-master/clang/host/linux-x86/clang-r383902/bin:$GITHUB_WORKSPACE/build/build-tools/path/linux-x86:$GITHUB_WORKSPACE/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:$PATH"
+          export LINUX_GCC_CROSS_COMPILE_PREBUILTS_BIN="$GITHUB_WORKSPACE/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin"
 
           make O=../out ARCH=arm64 CC=clang LD=ld.lld HOSTLD=ld.lld sweet_defconfig
 
@@ -92,11 +93,7 @@ jobs:
             LD=ld.lld HOSTLD=ld.lld HOSTLDFLAGS=-fuse-ld=lld \
             CLANG_TRIPLE=aarch64-linux-gnu- \
             CROSS_COMPILE=aarch64-linux-androidkernel- \
-            V=1 \
-            -j$(nproc) 2>&1 | tee /tmp/build.log || true
-
-          echo "===== Searching for cc-option failure details ====="
-          grep -B5 "stack-protector-strong\|CC_STACKPROTECTOR" /tmp/build.log || true
+            -j$(nproc)
 
       - name: Save toolchain cache (even on failure)
         if: always() && steps.cache-toolchain.outputs.cache-hit != 'true'
