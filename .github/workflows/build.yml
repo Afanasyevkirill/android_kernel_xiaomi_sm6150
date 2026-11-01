@@ -87,7 +87,11 @@ jobs:
             LD=ld.lld HOSTLD=ld.lld HOSTLDFLAGS=-fuse-ld=lld \
             CLANG_TRIPLE=aarch64-linux-gnu- \
             CROSS_COMPILE=aarch64-linux-androidkernel- \
-            -j$(nproc)
+            V=1 \
+            -j$(nproc) 2>&1 | tee /tmp/build.log || true
+
+          echo "===== Searching for cc-option failure details ====="
+          grep -B5 "stack-protector-strong\|CC_STACKPROTECTOR" /tmp/build.log || true
 
       - name: Save toolchain cache (even on failure)
         if: always() && steps.cache-toolchain.outputs.cache-hit != 'true'
