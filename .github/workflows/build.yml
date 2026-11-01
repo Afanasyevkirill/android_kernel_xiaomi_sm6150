@@ -56,6 +56,7 @@ jobs:
 
       - name: Fetch build-tools
         run: |
+          rm -rf build/build-tools/path
           mkdir -p build/build-tools
           git clone --depth=1 \
             https://android.googlesource.com/platform/build/build-tools \
