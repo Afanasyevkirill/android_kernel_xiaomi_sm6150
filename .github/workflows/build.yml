@@ -67,9 +67,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison flex libssl-dev cpio build-essential rsync
           
-      - name: Debug toolchain
+      - name: Diagnose stack-protector check
         run: |
-          ls -la prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/ | grep kernel
+          export PATH="$GITHUB_WORKSPACE/prebuilts-master/clang/host/linux-x86/clang-r383902/bin:$GITHUB_WORKSPACE/build/build-tools/path/linux-x86:$GITHUB_WORKSPACE/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:$PATH"
+          clang --version
+          echo "int main(void) { return 0; }" > /tmp/test.c
+          clang --target=aarch64-linux-gnu -fstack-protector-strong -c -x c /tmp/test.c -o /tmp/test.o
           
       - name: Build
         run: |
