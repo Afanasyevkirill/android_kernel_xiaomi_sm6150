@@ -71,13 +71,16 @@ jobs:
         run: |
           cd kernel
           export ARCH=arm64
-          export CC=clang
-          export CLANG_TRIPLE=aarch64-linux-gnu-
           export PATH="$GITHUB_WORKSPACE/prebuilts-master/clang/host/linux-x86/clang-r383902/bin:$GITHUB_WORKSPACE/build/build-tools/path/linux-x86:$GITHUB_WORKSPACE/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:$PATH"
 
-          make O=../out ARCH=arm64 CC=clang sweet_defconfig
-          make O=../out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=aarch64-linux-androidkernel- -j$(nproc)
+          make O=../out ARCH=arm64 CC=clang LD=ld.lld HOSTLD=ld.lld sweet_defconfig
+
+          make O=../out ARCH=arm64 \
+            CC=clang HOSTCC=clang \
+            LD=ld.lld HOSTLD=ld.lld HOSTLDFLAGS=-fuse-ld=lld \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-androidkernel- \
+            -j$(nproc)
 
       - name: Upload artifacts
         if: always()
