@@ -1,0 +1,71 @@
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get clean
+
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          path: kernel
+          submodules: recursive
+          ref: 7a173ea96171e484add3837f3792c4dfd8cb2ace
+
+      - name: Checkout AOSP build system (classic build.sh)
+        run: |
+          git clone https://android.googlesource.com/kernel/build build
+          cd build
+          git checkout $(git log --oneline --before=2021-01-01 -1 --format=%H)
+          cd ..
+
+      - name: Fetch Clang prebuilt (r383902)
+        run: |
+          mkdir -p prebuilts-master/clang/host/linux-x86
+          git clone --depth=1 \
+            https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 \
+            clang-tmp
+          cp -r clang-tmp/clang-r383902 prebuilts-master/clang/host/linux-x86/
+          rm -rf clang-tmp
+
+      - name: Fetch GCC aarch64 prebuilt (4.9)
+        run: |
+          mkdir -p prebuilts/gcc/linux-x86/aarch64
+          git clone --depth=1 \
+            https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
+            prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
+
+      - name: Fetch build-tools
+        run: |
+          mkdir -p build/build-tools
+          git clone --depth=1 \
+            https://android.googlesource.com/platform/build/build-tools \
+            build/build-tools/path
+
+      - name: Install host deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison flex libssl-dev cpio build-essential rsync
+
+      - name: Build
+        run: |
+          export KERNEL_DIR=kernel
+          export DEFCONFIG=sweet_defconfig
+          BUILD_CONFIG=kernel/build.config.common build/build.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-build
+          path: |
+            out/android-4.14/dist/Image
+            out/android-4.14/dist/Image.gz
+            out/android-4.14/dist/vmlinux
+            out/android-4.14/dist/System.map
