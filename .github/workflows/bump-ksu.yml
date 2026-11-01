@@ -1,0 +1,40 @@
+name: Bump KernelSU-Next submodule
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_commit:
+        description: 'KernelSU-Next commit to bump to'
+        required: true
+        default: '4c706b5938665866ebe16944a481a7b91e3396af'
+      version_label:
+        description: 'Short version label for branch name (e.g. 3.4.2-33355)'
+        required: true
+        default: '3.4.2-33355'
+
+jobs:
+  bump:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: 7a173ea96171e484add3837f3792c4dfd8cb2ace
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump submodule
+        run: |
+          cd KernelSU-Next
+          git fetch origin ${{ github.event.inputs.target_commit }}
+          git checkout ${{ github.event.inputs.target_commit }}
+          cd ..
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add KernelSU-Next
+          git commit -m "Bump KernelSU-Next to v${{ github.event.inputs.version_label }}"
+
+      - name: Push to new branch
+        run: |
+          git checkout -b ksu-${{ github.event.inputs.version_label }}
+          git push origin ksu-${{ github.event.inputs.version_label }} --force
