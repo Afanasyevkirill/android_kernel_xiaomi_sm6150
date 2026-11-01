@@ -44,9 +44,12 @@ jobs:
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
           mkdir -p prebuilts/gcc/linux-x86/aarch64
-          git clone --depth=1 \
-            https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
+          git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
             prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
+          cd prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
+          git checkout 1394c7f618bb0d38e9547824067d8c634cd392b8
+          cd -
+          ls -la prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/ | grep kernel
 
       - name: Fetch build-tools
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
