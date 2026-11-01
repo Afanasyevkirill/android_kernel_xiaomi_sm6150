@@ -63,7 +63,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bc bison flex libssl-dev cpio build-essential rsync
-
+          
+      - name: Debug toolchain
+        run: |
+          ls -la prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/ | grep kernel
+          
       - name: Build
         run: |
           cd kernel
