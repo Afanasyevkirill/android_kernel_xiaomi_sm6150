@@ -27,7 +27,7 @@ jobs:
             prebuilts-master/clang/host/linux-x86/clang-r383902
             prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
             build/build-tools/path
-          key: toolchain-r383902-gcc49-buildtools-v3
+          key: toolchain-r383902-gcc49-buildtools-v2
 
       - name: Fetch Clang prebuilt (r383902) via archive
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -49,7 +49,6 @@ jobs:
           cd prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
           git checkout 1394c7f618bb0d38e9547824067d8c634cd392b8
           cd -
-          ls -la prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/ | grep kernel
 
       - name: Fetch build-tools
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -60,31 +59,25 @@ jobs:
           file buildtools.tar.gz
           tar -xzf buildtools.tar.gz -C build/build-tools/path
           rm buildtools.tar.gz
-          ls build/build-tools/path/bin | head
+
+      - name: Fix missing elfedit kernel symlink
+        run: |
+          BINDIR="$GITHUB_WORKSPACE/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin"
+          if [ ! -e "$BINDIR/aarch64-linux-androidkernel-elfedit" ]; then
+            ln -s aarch64-linux-android-elfedit "$BINDIR/aarch64-linux-androidkernel-elfedit"
+          fi
+          ls -la "$BINDIR" | grep kernel
 
       - name: Install host deps
         run: |
           sudo apt-get update
           sudo apt-get install -y bc bison flex libssl-dev cpio build-essential rsync
-          
-      - name: Diagnose real KBUILD_CFLAGS
-        run: |
-          cd kernel
-          export ARCH=arm64
-          export PATH="$GITHUB_WORKSPACE/prebuilts-master/clang/host/linux-x86/clang-r383902/bin:$GITHUB_WORKSPACE/build/build-tools/path/linux-x86:$GITHUB_WORKSPACE/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:$PATH"
-          make O=../out ARCH=arm64 \
-            CC=clang HOSTCC=clang \
-            LD=ld.lld HOSTLD=ld.lld HOSTLDFLAGS=-fuse-ld=lld \
-            CLANG_TRIPLE=aarch64-linux-gnu- \
-            CROSS_COMPILE=aarch64-linux-androidkernel- \
-            -p -n prepare-compiler-check 2>&1 | grep -A2 "^KBUILD_CFLAGS " | head -5
-          
+
       - name: Build
         run: |
           cd kernel
           export ARCH=arm64
           export PATH="$GITHUB_WORKSPACE/prebuilts-master/clang/host/linux-x86/clang-r383902/bin:$GITHUB_WORKSPACE/build/build-tools/path/linux-x86:$GITHUB_WORKSPACE/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin:$PATH"
-          export LINUX_GCC_CROSS_COMPILE_PREBUILTS_BIN="$GITHUB_WORKSPACE/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin"
 
           make O=../out ARCH=arm64 CC=clang LD=ld.lld HOSTLD=ld.lld sweet_defconfig
 
@@ -103,7 +96,7 @@ jobs:
             prebuilts-master/clang/host/linux-x86/clang-r383902
             prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
             build/build-tools/path
-          key: toolchain-r383902-gcc49-buildtools-v3
+          key: toolchain-r383902-gcc49-buildtools-v2
 
       - name: Upload artifacts
         if: always()
