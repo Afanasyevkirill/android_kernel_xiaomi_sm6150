@@ -27,7 +27,7 @@ jobs:
             prebuilts-master/clang/host/linux-x86/clang-r383902
             prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
             build/build-tools/path
-          key: toolchain-r383902-gcc49-buildtools-v2
+          key: toolchain-r383902-gcc49-buildtools-v3
 
       - name: Fetch Clang prebuilt (r383902) via archive
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
@@ -94,7 +94,7 @@ jobs:
             prebuilts-master/clang/host/linux-x86/clang-r383902
             prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
             build/build-tools/path
-          key: toolchain-r383902-gcc49-buildtools-v2
+          key: toolchain-r383902-gcc49-buildtools-v3
 
       - name: Upload artifacts
         if: always()
