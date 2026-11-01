@@ -19,13 +19,6 @@ jobs:
           submodules: recursive
           ref: 7a173ea96171e484add3837f3792c4dfd8cb2ace
 
-      - name: Checkout AOSP build system (classic build.sh)
-        run: |
-          git clone https://android.googlesource.com/kernel/build build
-          cd build
-          git checkout $(git log --oneline --before=2021-01-01 -1 --format=%H)
-          cd ..
-
       - name: Cache toolchain
         id: cache-toolchain
         uses: actions/cache@v4
@@ -33,16 +26,9 @@ jobs:
           path: |
             prebuilts-master/clang/host/linux-x86/clang-r383902
             prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
-          key: toolchain-r383902-gcc49-v2
-      - name: Fetch build-tools
-        run: |
-          mkdir -p build/build-tools/path
-          curl -L "https://android.googlesource.com/platform/prebuilts/build-tools/+archive/refs/heads/main/linux-x86.tar.gz" \
-            -o buildtools.tar.gz
-          file buildtools.tar.gz
-          tar -xzf buildtools.tar.gz -C build/build-tools/path
-          rm buildtools.tar.gz
-          ls build/build-tools/path/bin | head
+            build/build-tools/path
+          key: toolchain-r383902-gcc49-buildtools-v1
+
       - name: Fetch Clang prebuilt (r383902) via archive
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
@@ -61,6 +47,17 @@ jobs:
           git clone --depth=1 \
             https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
             prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
+
+      - name: Fetch build-tools
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p build/build-tools/path
+          curl -L "https://android.googlesource.com/platform/prebuilts/build-tools/+archive/refs/heads/main/linux-x86.tar.gz" \
+            -o buildtools.tar.gz
+          file buildtools.tar.gz
+          tar -xzf buildtools.tar.gz -C build/build-tools/path
+          rm buildtools.tar.gz
+          ls build/build-tools/path/bin | head
 
       - name: Install host deps
         run: |
@@ -82,14 +79,24 @@ jobs:
             CROSS_COMPILE=aarch64-linux-androidkernel- \
             -j$(nproc)
 
+      - name: Save toolchain cache (even on failure)
+        if: always() && steps.cache-toolchain.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            prebuilts-master/clang/host/linux-x86/clang-r383902
+            prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9
+            build/build-tools/path
+          key: toolchain-r383902-gcc49-buildtools-v1
+
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: kernel-build
           path: |
-            out/android-4.14/dist/Image
-            out/android-4.14/dist/Image.gz
-            out/android-4.14/dist/vmlinux
-            out/android-4.14/dist/System.map
+            out/arch/arm64/boot/Image
+            out/arch/arm64/boot/Image.gz
+            out/vmlinux
+            out/System.map
           if-no-files-found: warn
